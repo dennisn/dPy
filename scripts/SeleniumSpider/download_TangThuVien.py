@@ -22,22 +22,39 @@ LogManager = LogHelper.LogConfigurator("./Log/download_TangThuVien.txt")
 
 import logging
 import os
+from unidecode import unidecode
 
+
+
+def format_filename(s, extension=".html"):
+    """Take a string and return a valid filename constructed from the string.
+    Uses a whitelist approach: any characters not present in valid_chars are
+    removed. Also spaces are replaced with underscores.
+    """
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = ''.join(c for c in s if c in valid_chars)
+    filename = filename.replace(' ','_') # I don't like spaces in filenames.
+    return filename + extension
 
 def convert_title_to_filename(title_st):
-    title_st = title_st.split("(")[0].strip()
-    title_st = title_st.replace("?", "").replace(".", "").replace("*", "").replace('"', '')
-    return title_st.replace(" ", "_").replace(":", "_") + ".html"
+    #title_st = title_st.split("(")[0].strip()
+    #title_st = title_st.replace("?", "").replace(".", "").replace("*", "").replace('"', '')
+    #title_st =  title_st.replace(" ", "_").replace(":", "_").replace(r"/", "")
+    #return unidecode(title_st)+ ".html"
+    return format_filename(unidecode(title_st), ".html")
 
 
 def main():
     driver = webdriver.Firefox()
     
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/khoa-ky-luyen-khi-su--khoa-hoc-ky-thuat-luyen-khi-su/chuong-"
-    dest_dir = r"C:\Temp\KhoaKyLuyenKhiSu"
+    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/khoa-ky-luyen-khi-su--khoa-hoc-ky-thuat-luyen-khi-su/chuong-"
+    #dest_dir = r"C:\Temp\KhoaKyLuyenKhiSu"
+    
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/6931-dichtao-tac-suu-tam/chuong-"
+    dest_dir = r"c:\Temp\TaoTac"
     os.makedirs(dest_dir, exist_ok=True)
 
-    count = 749
+    count = 1
     next_url = target_url + str(count)
     while True:
         driver.get(next_url)
@@ -59,7 +76,9 @@ def main():
         file_name = convert_title_to_filename(chapter_st)
         print("Write to file: ", file_name)
         with open(os.path.join(dest_dir, file_name), "wb") as fout:
-            fout.write("<html><head>".encode("UTF-8"))
+            fout.write(r"<?xml version='1.0' encoding='utf-8'?>".encode("UTF-8"))
+            fout.write(r'<html xmlns=\"http://www.w3.org/1999/xhtml\">'.encode("UTF-8"))
+            fout.write("<head>".encode("UTF-8"))
             fout.write(title_ele.get_attribute("outerHTML").encode("UTF-8"))
             fout.write("</head><body>".encode("UTF-8"))
             fout.write(chapter_ele.get_attribute("outerHTML").encode("UTF-8"))
@@ -69,7 +88,7 @@ def main():
             content = content.replace("\n\n", "<P/>\n")
             fout.write(content.encode("UTF-8"))
             
-            fout.write("</body>".encode("UTF-8"))
+            fout.write("</body></html>".encode("UTF-8"))
         
         # next chapter button
         count = count + 1
