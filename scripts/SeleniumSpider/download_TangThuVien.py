@@ -1,0 +1,80 @@
+from selenium import webdriver
+import requests
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+import importlib
+import sys
+import string
+from pathlib import Path
+
+# make sure the root of the developing library is in the path
+module_path=r"C:\Dev\Github\dPy"
+if module_path not in sys.path:
+    sys.path.append(module_path)
+
+# normal import
+from dpy import LogHelper
+LogManager = LogHelper.LogConfigurator("./Log/download_TangThuVien.txt")
+
+import logging
+import os
+
+
+def convert_title_to_filename(title_st):
+    title_st = title_st.split("(")[0].strip()
+    title_st = title_st.replace("?", "").replace(".", "").replace("*", "").replace('"', '')
+    return title_st.replace(" ", "_").replace(":", "_") + ".html"
+
+
+def main():
+    driver = webdriver.Firefox()
+    
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/khoa-ky-luyen-khi-su--khoa-hoc-ky-thuat-luyen-khi-su/chuong-"
+    dest_dir = r"C:\Temp\KhoaKyLuyenKhiSu"
+    os.makedirs(dest_dir, exist_ok=True)
+
+    count = 749
+    next_url = target_url + str(count)
+    while True:
+        driver.get(next_url)
+        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div/div[1]/div[2]/div/div[1]')))
+        logging.info("Processing location: " + driver.current_url)
+        
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    
+        title_ele = driver.find_element(By.TAG_NAME, "title")
+        
+        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/h2")
+        chapter_st = chapter_ele.text if chapter_ele is not None else "Chapter_" + str(count)
+        
+        # search for content
+        content_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/div[2]/div/div[1]")
+        #content_st = content_ele.text if content_ele is not None else None
+        
+        # write file out
+        file_name = convert_title_to_filename(chapter_st)
+        print("Write to file: ", file_name)
+        with open(os.path.join(dest_dir, file_name), "wb") as fout:
+            fout.write("<html><head>".encode("UTF-8"))
+            fout.write(title_ele.get_attribute("outerHTML").encode("UTF-8"))
+            fout.write("</head><body>".encode("UTF-8"))
+            fout.write(chapter_ele.get_attribute("outerHTML").encode("UTF-8"))
+            
+            #fout.write(content_ele.get_attribute("outerHTML").encode("UTF-8"))
+            content = content_ele.get_attribute("outerHTML")
+            content = content.replace("\n\n", "<P/>\n")
+            fout.write(content.encode("UTF-8"))
+            
+            fout.write("</body>".encode("UTF-8"))
+        
+        # next chapter button
+        count = count + 1
+        next_url = target_url + str(count)
+            
+
+if __name__ == '__main__':
+    sys.exit(main())
