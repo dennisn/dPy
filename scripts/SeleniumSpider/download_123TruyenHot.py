@@ -18,12 +18,11 @@ if module_path not in sys.path:
 
 # normal import
 from dpy import LogHelper
-LogManager = LogHelper.LogConfigurator("./Log/download_TangThuVien.txt")
+LogManager = LogHelper.LogConfigurator("./Log/download_123TruyenHot.txt")
 
 import logging
 import os
 from unidecode import unidecode
-
 
 
 def format_filename(s, extension=".html"):
@@ -42,44 +41,45 @@ def convert_title_to_filename(title_st):
     #title_st = title_st.replace("?", "").replace(".", "").replace("*", "").replace('"', '')
     #title_st =  title_st.replace(" ", "_").replace(":", "_").replace(r"/", "")
     #return unidecode(title_st)+ ".html"
-    return format_filename(unidecode(title_st), ".html")
+    return format_filename(unidecode(title_st), "_.html")
 
 
 def main():
+    truncate_st_1 = "Thông Báo: Website chuyển qua sử dụng tên miền mới <a href=\"https://123truyenzz.com/\">123truyenzz.com</a> , Chúc bạn đọc truyện vui vẻ!</p>"
+    truncate_st_2 = "<p>Nếu bạn không load được website hãy cài đặt app 1.1.1.1 để truy cập website."
     driver = webdriver.Firefox()
     
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/khoa-ky-luyen-khi-su--khoa-hoc-ky-thuat-luyen-khi-su/chuong-"
-    #dest_dir = r"C:\Temp\KhoaKyLuyenKhiSu"
+    #target_url = r"https://123truyenzz.com/than-cap-van-minh/chuong-"
+    #dest_dir = r"c:\Temp\ThanCapVanMinh"
     
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/6931-dichtao-tac-suu-tam/chuong-"
-    #dest_dir = r"c:\Temp\TaoTac"
+    #target_url = r"https://123truyenzz.com/ngu-thu-than-cap-ngu-thu-su/chuong-"
+    #dest_dir = r"c:\Temp\ThanCapNguThuSu"
     
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichsay-mong-giang-son-suu-tam/chuong-"
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tuy-cham-giang-son/chuong-"
-    #dest_dir = r"c:\Temp\TuyChamGiangSon"
+    #target_url = r"https://123truyenzz.com/tri-tue-dai-tong/chuong-"
+    #dest_dir = r"c:\Temp\TriTueDaiTong"
     
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thanh-binh/chuong-"
-    dest_dir = r"c:\Temp\ThanhBinh"
-    
+    target_url = r"https://123truyenzz.com/bach-luyen-thanh-than/chuong-"
+    dest_dir = r"c:\Temp\BachLuyenThanhThan"
     
     os.makedirs(dest_dir, exist_ok=True)
 
-    count = 1
+    count = 1549
     next_url = target_url + str(count)
-    while True and count <= 1000000:
+    while True and count < 4000:
         driver.get(next_url)
-        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div/div[1]/div[2]/div/div[1]')))
+        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/div[3]/div/div/div[2]')))
         logging.info("Processing location: " + driver.current_url)
         
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     
-        title_ele = driver.find_element(By.TAG_NAME, "title")
+        title_ele = driver.find_element(By.CLASS_NAME, "truyen-title")
         
-        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/h2")
+        chapter_ele = driver.find_element(By.CLASS_NAME, "chapter-title")
         chapter_st = chapter_ele.text if chapter_ele is not None else "Chapter_" + str(count)
         
         # search for content
-        content_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/div[2]/div/div[1]")
+        content_ele = driver.find_element(By.ID, "js-truyenkk-read-content")
+        
         #content_st = content_ele.text if content_ele is not None else None
         
         # write file out
@@ -89,13 +89,15 @@ def main():
             fout.write(r"<?xml version='1.0' encoding='utf-8'?>".encode("UTF-8"))
             fout.write(r'<html xmlns=\"http://www.w3.org/1999/xhtml\">'.encode("UTF-8"))
             fout.write("<head>".encode("UTF-8"))
-            fout.write(title_ele.get_attribute("outerHTML").encode("UTF-8"))
+            fout.write(chapter_st.encode("UTF-8"))
             fout.write("</head><body>".encode("UTF-8"))
             fout.write(chapter_ele.get_attribute("outerHTML").encode("UTF-8"))
             
             #fout.write(content_ele.get_attribute("outerHTML").encode("UTF-8"))
             content = content_ele.get_attribute("outerHTML")
             content = content.replace("\n\n", "<P/>\n")
+            content = content.replace(truncate_st_1, "")
+            content = content.replace(truncate_st_2, "")
             fout.write(content.encode("UTF-8"))
             
             fout.write("</body></html>".encode("UTF-8"))
