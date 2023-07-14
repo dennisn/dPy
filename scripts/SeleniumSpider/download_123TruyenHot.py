@@ -58,12 +58,24 @@ def main():
     #target_url = r"https://123truyenzz.com/tri-tue-dai-tong/chuong-"
     #dest_dir = r"c:\Temp\TriTueDaiTong"
     
-    target_url = r"https://123truyenzz.com/bach-luyen-thanh-than/chuong-"
-    dest_dir = r"c:\Temp\BachLuyenThanhThan"
+    #target_url = r"https://123truyenzz.com/bach-luyen-thanh-than/chuong-"
+    #dest_dir = r"c:\Temp\BachLuyenThanhThan"
+    
+    # # Cầu Ma - Nhĩ Căn
+    # target_url = r"https://123truyenzz.com/cau-ma/chuong-"
+    # dest_dir = r"c:\Temp\CauMa"
+    
+    # # Ngã Dục Phong Thiên - Nhĩ Căn
+    # target_url = r"https://123truyenzz.com/nga-duc-phong-thien/chuong-"
+    # dest_dir = r"c:\Temp\NgaDucPhongThien"
+    
+    # Thần Tú Chi Chủ - Văn Sao Công
+    target_url = r"https://123truyenzzz.com/than-tu-chi-chu/chuong-"
+    dest_dir = r"c:\Temp\ThanTuChiChu"
     
     os.makedirs(dest_dir, exist_ok=True)
 
-    count = 1549
+    count = 704
     next_url = target_url + str(count)
     while True and count < 4000:
         driver.get(next_url)

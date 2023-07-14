@@ -58,8 +58,14 @@ def main():
     #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tuy-cham-giang-son/chuong-"
     #dest_dir = r"c:\Temp\TuyChamGiangSon"
     
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thanh-binh/chuong-"
-    dest_dir = r"c:\Temp\ThanhBinh"
+    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thanh-binh/chuong-"
+    #dest_dir = r"c:\Temp\ThanhBinh"
+    
+    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
+    #dest_dir = r"c:\Temp\CauTaiYeuVoLoanTheTuTien"
+    
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam/chuong-"
+    dest_dir = r"c:\Temp\TapDo"
     
     
     os.makedirs(dest_dir, exist_ok=True)
