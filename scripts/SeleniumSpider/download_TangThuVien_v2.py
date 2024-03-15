@@ -110,13 +110,12 @@ def read_chapter_list(chapter_list_file):
             res.append(row)
     return res
 
-def retrieve_pages(driver, dest_dir, chapter_list):
+def retrieve_pages(driver, dest_dir, chapter_list, skip_count=0):
     count = 0
     for chapter_st, url_st in chapter_list:
         # print(convert_title_to_filename(title_st), "::", url_st)
         
         count += 1
-        skip_count = 0
         if count < skip_count:
             continue
         driver.get(url_st)
@@ -151,15 +150,20 @@ def retrieve_pages(driver, dest_dir, chapter_list):
 
 def main():
     driver = webdriver.Firefox()
-   
+    skip_count = 0
     
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam"
-    dest_dir = r"D:\Temp\TapDo"
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam"
+    # dest_dir = r"D:\Temp\TapDo"
     
     # Tiêu Dao Mộng Lộ - Văn Sao Công
     # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tieu-dao-mong-lo/3521996-chuong-1"
     # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tieu-dao-mong-lo"
     # dest_dir = r"D:\Temp\TieuDaoMongLo"
+    
+    # Lão Tử Thị Lại Cáp Mô - Phong Hỏa Hí Chư Hầu
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/lao-tu-thi-lai-cap-mo---reconvert"
+    dest_dir = r"D:\Temp\LaoTuThiLaiCapMo"
+    skip_count=310
     
     
     os.makedirs(dest_dir, exist_ok=True)
@@ -167,13 +171,13 @@ def main():
     # retrieve the chapter list
     chapter_list_file = os.path.join(dest_dir, "TOC.csv")
     chapter_list = None
-    chapter_list = retrieve_chapter_list(driver, target_url, chapter_list_file)
+    #chapter_list = retrieve_chapter_list(driver, target_url, chapter_list_file)
     
     if chapter_list is None:
         chapter_list = read_chapter_list(chapter_list_file)
         
     if chapter_list is not None:
-        retrieve_pages(driver, dest_dir, chapter_list)
+        retrieve_pages(driver, dest_dir, chapter_list, skip_count)
 
 if __name__ == '__main__':
     sys.exit(main())

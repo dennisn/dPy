@@ -61,31 +61,48 @@ def main():
     #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thanh-binh/chuong-"
     #dest_dir = r"c:\Temp\ThanhBinh"
     
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
-    #dest_dir = r"c:\Temp\CauTaiYeuVoLoanTheTuTien"
+    # Cẩu Tại Yêu Võ Loạn Thế Tu Tiên - Văn Sao Công
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
+    dest_dir = r"D:\Temp\CauTaiYeuVoLoanTheTuTien"
     
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam/chuong-"
-    dest_dir = r"c:\Temp\TapDo"
+    # Lão Tử Thị Lại Cáp Mô - Phong Hỏa Hí Chư Hầu
+    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/lao-tu-thi-lai-cap-mo---reconvert/chuong-"
+    #dest_dir = r"D:\Temp\LaoTuThiLaiCapMo"
     
+    # Ác Hán - Canh Tân
+    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichac-han-suu-tam/chuong-"
+    #dest_dir = r"D:\Temp\AcHan"
+    
+    # Thịnh Đường Quật Khởi  - Canh Tân
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thinh-duong-quat-khoi/chuong-"
+    # dest_dir = r"D:\Temp\CanhTan_ThinhDuongQuatKhoi"
+    
+   # Chắc Chẳng Có Ai Cảm Thấy Tu Tiên Khó  - Hắc Dạ Di Thiên
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/se-khong-thuc-su-co-nguoi-cam-thay-tu-tien-kho-di-bat-hoi-chan-huu-nhan-giac-dac-tu-tien-nan-ba/chuong-"
+    # dest_dir = r"D:\Temp\HacDaDiThien_ChacChangCoAiCamThayTuTienKho"
     
     os.makedirs(dest_dir, exist_ok=True)
 
-    count = 1
+    count = 861
+
     next_url = target_url + str(count)
-    while True and count <= 1000000:
+    while True and count <= 100000:
         driver.get(next_url)
-        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div/div[1]/div[2]/div/div[1]')))
+        
+        
+        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div[1]/div/div[1]/div[2]/div/div[1]')))
         logging.info("Processing location: " + driver.current_url)
         
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     
         title_ele = driver.find_element(By.TAG_NAME, "title")
         
-        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/h2")
+        
+        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div[1]/div/div[1]/div[2]/div/h5/a")
         chapter_st = chapter_ele.text if chapter_ele is not None else "Chapter_" + str(count)
         
         # search for content
-        content_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/div[2]/div/div[1]")
+        content_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div[1]/div/div[1]/div[2]/div/div[1]")
         #content_st = content_ele.text if content_ele is not None else None
         
         # write file out
