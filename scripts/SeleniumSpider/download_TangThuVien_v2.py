@@ -4,10 +4,9 @@ import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import UnexpectedAlertPresentException, NoSuchElementException
 
-from selenium.common.exceptions import UnexpectedAlertPresentException
-
-
+import csv
 import importlib
 import sys
 import string
@@ -37,7 +36,8 @@ def format_filename(s, extension=".html"):
     filename = ''.join(c for c in s if c in valid_chars)
     filename = filename.replace(' ','_') # I don't like spaces in filenames.
     filename = filename.replace("..", "")
-    return filename + extension
+    return (filename + extension).replace("..", ".")
+
 
 def convert_title_to_filename(title_st):
     #title_st = title_st.split("(")[0].strip()
@@ -47,77 +47,86 @@ def convert_title_to_filename(title_st):
     return format_filename(unidecode(title_st), ".html")
 
 
-def main():
-    driver = webdriver.Firefox()
-    
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/khoa-ky-luyen-khi-su--khoa-hoc-ky-thuat-luyen-khi-su/chuong-"
-    #dest_dir = r"C:\Temp\KhoaKyLuyenKhiSu"
-    
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/6931-dichtao-tac-suu-tam/chuong-"
-    #dest_dir = r"c:\Temp\TaoTac"
-    
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichsay-mong-giang-son-suu-tam/chuong-"
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tuy-cham-giang-son/chuong-"
-    #dest_dir = r"c:\Temp\TuyChamGiangSon"
-    
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/thanh-binh/chuong-"
-    #dest_dir = r"c:\Temp\ThanhBinh"
-    
-    #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
-    #dest_dir = r"c:\Temp\CauTaiYeuVoLoanTheTuTien"
-    
-    
-    
-    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam/chuong-"
-    # dest_dir = r"c:\Temp\TapDo"
-    
-    # Tiêu Dao Mộng Lộ - Văn Sao Công
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tieu-dao-mong-lo/3521996-chuong-1"
-    dest_dir = r"c:\Temp\TieuDaoMongLo"
-    
-    
-    os.makedirs(dest_dir, exist_ok=True)
+def retrieve_chapter_list(driver, target_url, chapter_list_file):
 
-    count = 1
-    # next_url = target_url
     driver.get(target_url)
+    results = []
     
     
+    # Wait for loading
+    _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div[2]/div/ul/li[2]/a')))
+    logging.info("Processing location: " + driver.current_url)
+    
+    # Scrolling to end so we have everything
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    
+    # Move the table of content
+    toc_link = driver.find_element(By.XPATH, "/html/body/div[5]/div[2]/div/ul/li[2]/a")
+    driver.execute_script("arguments[0].click();", toc_link)
+    
+    _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div[3]/div/div[2]/div/nav/ul')))
+    
+    count = 1
     while True:
+
+        chapter_items = driver.find_elements(By.XPATH, "/html/body/div[5]/div[3]/div/div[2]/ul/li")
+        for chapter_item in chapter_items:
+            try:
+                chapter_link = chapter_item.find_element(By.XPATH, ".//a")
+                title_st = unidecode(chapter_link.get_attribute("title"))
+                href_st = chapter_link.get_attribute("href")
+                results.append([title_st, href_st])
+            except NoSuchElementException:
+                # ignore
+                continue
+            
         
-        # Wait for loading
-        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div/div[1]/div[2]/div/div[1]')))
-        logging.info("Processing location: " + driver.current_url)
+        next_link = None
+        try:
+            next_link = driver.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div[2]/div/nav/ul/li/a[@aria-label="Next"]')
+            logging.info("Next link: " + next_link.text)
+        except NoSuchElementException:
+            # ignore
+            next_link = None
         
-        # Scrolling to end so we have everything
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        if next_link is None:
+            break
+        driver.execute_script("arguments[0].click();", next_link)
+        _ = WebDriverWait(driver, 3).until(EC.staleness_of(chapter_link))
+       
     
-        title_ele = driver.find_element(By.TAG_NAME, "title")
+    with open(chapter_list_file, mode="w",newline='') as toc_file:
+        csv_writer = csv.writer(toc_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for res in results:
+            logging.info(res[0] + "," + res[1])
+            csv_writer.writerow(res)
+    return results
+
+def read_chapter_list(chapter_list_file):
+    res = []
+    with open(chapter_list_file, mode='r') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            res.append(row)
+    return res
+
+def retrieve_pages(driver, dest_dir, chapter_list, skip_count=0):
+    count = 0
+    for chapter_st, url_st in chapter_list:
+        # print(convert_title_to_filename(title_st), "::", url_st)
         
-        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/h2")
-        chapter_st = chapter_ele.text if chapter_ele is not None else "Chapter_" + str(count)
+        count += 1
+        if count < skip_count:
+            continue
+        driver.get(url_st)
+        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div/div[1]/div[2]/div/div[1]')))
+        logging.info("Processing location: " + str(count) + "==" + driver.current_url)
+        
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         
         # search for content
-        content_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/div[2]/div/div[1]")
-        #content_st = content_ele.text if content_ele is not None else None
-        
-        # write file out
-        file_name = convert_title_to_filename(chapter_st)
-        print("Write to file: ", file_name)
-        with open(os.path.join(dest_dir, file_name), "wb") as fout:
-            fout.write(r"<?xml version='1.0' encoding='utf-8'?>".encode("UTF-8"))
-            fout.write(r'<html xmlns=\"http://www.w3.org/1999/xhtml\">'.encode("UTF-8"))
-            fout.write("<head>".encode("UTF-8"))
-            fout.write(title_ele.get_attribute("outerHTML").encode("UTF-8"))
-            fout.write("</head><body>".encode("UTF-8"))
-            fout.write(chapter_ele.get_attribute("outerHTML").encode("UTF-8"))
-            
-            #fout.write(content_ele.get_attribute("outerHTML").encode("UTF-8"))
-            content = content_ele.get_attribute("outerHTML")
-            content = content.replace("\n\n", "<P/>\n")
-            fout.write(content.encode("UTF-8"))
-            
-            fout.write("</body></html>".encode("UTF-8"))
+        title_ele = driver.find_element(By.TAG_NAME, "title")
+        chapter_ele = driver.find_element(By.XPATH, "/html/body/div[5]/div/div[1]/h2")
         
         # next chapter button
         # count = count + 1
@@ -145,6 +154,39 @@ def main():
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 
         logging.info("Wait for: " + driver.current_url)
+
+
+def main():
+    driver = webdriver.Firefox()
+    skip_count = 0
+    
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/dichtap-do-suu-tam"
+    # dest_dir = r"D:\Temp\TapDo"
+    
+    # Tiêu Dao Mộng Lộ - Văn Sao Công
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tieu-dao-mong-lo/3521996-chuong-1"
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/tieu-dao-mong-lo"
+    # dest_dir = r"D:\Temp\TieuDaoMongLo"
+    
+    # Lão Tử Thị Lại Cáp Mô - Phong Hỏa Hí Chư Hầu
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/lao-tu-thi-lai-cap-mo---reconvert"
+    dest_dir = r"D:\Temp\LaoTuThiLaiCapMo"
+    skip_count=310
+    
+    
+    os.makedirs(dest_dir, exist_ok=True)
+    
+    # retrieve the chapter list
+    chapter_list_file = os.path.join(dest_dir, "TOC.csv")
+    chapter_list = None
+    #chapter_list = retrieve_chapter_list(driver, target_url, chapter_list_file)
+    
+    if chapter_list is None:
+        chapter_list = read_chapter_list(chapter_list_file)
+        
+    if chapter_list is not None:
+        retrieve_pages(driver, dest_dir, chapter_list, skip_count)
+
 
 if __name__ == '__main__':
     sys.exit(main())
