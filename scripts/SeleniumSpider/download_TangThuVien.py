@@ -62,8 +62,8 @@ def main():
     #dest_dir = r"c:\Temp\ThanhBinh"
     
     # Cẩu Tại Yêu Võ Loạn Thế Tu Tiên - Văn Sao Công
-    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
-    dest_dir = r"D:\Temp\CauTaiYeuVoLoanTheTuTien"
+    # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/cau-tai-yeu-vu-loan-the-tu-tien/chuong-"
+    # dest_dir = r"D:\Temp\CauTaiYeuVoLoanTheTuTien"
     
     # Lão Tử Thị Lại Cáp Mô - Phong Hỏa Hí Chư Hầu
     #target_url = r"https://truyen.tangthuvien.vn/doc-truyen/lao-tu-thi-lai-cap-mo---reconvert/chuong-"
@@ -81,14 +81,34 @@ def main():
     # target_url = r"https://truyen.tangthuvien.vn/doc-truyen/se-khong-thuc-su-co-nguoi-cam-thay-tu-tien-kho-di-bat-hoi-chan-huu-nhan-giac-dac-tu-tien-nan-ba/chuong-"
     # dest_dir = r"D:\Temp\HacDaDiThien_ChacChangCoAiCamThayTuTienKho"
     
+    # Bất Phóng Tâm Du Điều - Nhất Phẩm Tu Tiên
+    target_url = r"https://truyen.tangthuvien.vn/doc-truyen/nhat-pham-tu-tien/chuong-"
+    dest_dir = r"D:\Temp\BatPhongTamDuDieu_NhatPhamTuTien"
+    
     os.makedirs(dest_dir, exist_ok=True)
+    
+    # extracted already downloaded number
+    filenames = [x for x in os.listdir(dest_dir) if x.startswith("Chuong_") and x.endswith(".html")]
+    nums = []
+    for filename in filenames:
+        parts = filename.split('_')
+        if len(parts) > 2:
+            nums.append(parts[1])
+        else:
+            print("Error: ", filename)
 
-    count = 861
+    count = 0
 
     next_url = target_url + str(count)
     while True and count <= 100000:
-        driver.get(next_url)
+        # next chapter
+        count = count + 1
+        next_url = target_url + str(count)
         
+        if str(count) in nums:
+            continue
+        
+        driver.get(next_url)
         
         _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[5]/div[1]/div/div[1]/div[2]/div/div[1]')))
         logging.info("Processing location: " + driver.current_url)
@@ -122,10 +142,6 @@ def main():
             fout.write(content.encode("UTF-8"))
             
             fout.write("</body></html>".encode("UTF-8"))
-        
-        # next chapter button
-        count = count + 1
-        next_url = target_url + str(count)
             
 
 if __name__ == '__main__':
