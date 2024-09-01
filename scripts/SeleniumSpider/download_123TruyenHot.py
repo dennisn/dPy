@@ -4,7 +4,7 @@ import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.common.exceptions import TimeoutException
 
 import importlib
 import sys
@@ -159,17 +159,34 @@ def main():
     # dest_dir = r"D:\Temp\CoMan_BuaTruaTinhYeu"
     
     #  Văn Sao Công - Cẩu Tại Yêu Võ Loạn Thế Tu Tiên
-    target_url = r"https://123truyennn.com/cau-tai-yeu-vo-loan-the-tu-tien/chuong-"
-    dest_dir = r"D:\Temp\VanSaoCong_CauTaiYeuVoLoanTheTuTien"
+    # target_url = r"https://123truyennn.com/cau-tai-yeu-vo-loan-the-tu-tien/chuong-"
+    # dest_dir = r"D:\Temp\VanSaoCong_CauTaiYeuVoLoanTheTuTien"
+    
+    #  Loạn - Mục Long Sư
+    target_url = r"https://123truyenk.vip/muc-long-su/chuong-"
+    dest_dir = r"D:\Temp\Loan_MucLongSu"
     
     os.makedirs(dest_dir, exist_ok=True)
 
-    count = 1
+    count = 779
     next_url = target_url + str(count)
     while True and count < 4000:
-        driver.get(next_url)
-        _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/div[3]/div/div/div[2]')))
-        logging.info("Processing location: " + driver.current_url)
+        retry = 3
+        while retry > 0:
+            try:
+                driver.get(next_url)
+                
+                _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/div[3]/div/div/div[2]')))
+                logging.info("Processing location: " + driver.current_url)
+                break
+            except TimeoutException:
+                retry -= 1
+                driver.implicitly_wait(5)
+                logging.info("Retry: " + str(retry) + " for location: " + driver.current_url)
+                # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        
+        # _ = WebDriverWait(driver, 3).until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/div[3]/div/div/div[2]')))
+        # logging.info("Processing location: " + driver.current_url)
         
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     
