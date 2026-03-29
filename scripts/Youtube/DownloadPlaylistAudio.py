@@ -1,3 +1,5 @@
+# To save the audio as an MP3, you will also need FFmpeg installed on your system, as it handles the actual conversion from the raw video/audio stream into the MP3 format.
+
 import yt_dlp
 
 def download_playlist_mp3(playlist_url):
